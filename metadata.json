@@ -1,0 +1,8 @@
+{
+  "name": "Mosque Audio Tuner (مهندس صوت المساجد)",
+  "description": "An AI-powered video assistant that helps fix audio issues in mosques by analyzing the equipment settings in real-time.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
