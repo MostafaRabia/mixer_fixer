@@ -3,33 +3,63 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 
 // --- Environment Variable Polyfill ---
-// This ensures the app can read the API key in various environments (Vite, Netlify, etc.)
-// where process.env might not be defined or the key is prefixed with VITE_.
-if (typeof window !== 'undefined') {
-  // Ensure window.process exists
-  if (typeof (window as any).process === 'undefined') {
-    (window as any).process = { env: {} };
-  }
-  // Ensure window.process.env exists
-  if (typeof (window as any).process.env === 'undefined') {
-    (window as any).process.env = {};
+// This function attempts to find the API Key from various build-tool specific locations
+// and standardizes it into process.env.API_KEY for the app to use.
+(function setupEnvironment() {
+  let key = '';
+
+  // 1. Try Vite (VITE_API_KEY)
+  // We must access import.meta.env.VITE_API_KEY explicitly for Vite's static replacement to work.
+  try {
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
+      // @ts-ignore
+      key = import.meta.env.VITE_API_KEY;
+    }
+  } catch (e) {
+    // Ignore errors if import.meta is not defined
   }
 
-  // Check for modern build tool env vars (Vite)
-  // @ts-ignore
-  const viteEnv = typeof import.meta !== 'undefined' ? (import.meta as any).env : {};
-  
-  // Try to find the key in different common locations
-  const potentialKey = 
-    viteEnv?.VITE_API_KEY || 
-    viteEnv?.REACT_APP_API_KEY || 
-    (window as any).process.env.API_KEY;
-
-  // If found, ensure it's available where the Gemini SDK expects it (process.env.API_KEY)
-  if (potentialKey) {
-    (window as any).process.env.API_KEY = potentialKey;
+  // 2. Try Create React App (REACT_APP_API_KEY)
+  if (!key) {
+    try {
+      // @ts-ignore
+      if (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_KEY) {
+        // @ts-ignore
+        key = process.env.REACT_APP_API_KEY;
+      }
+    } catch (e) {
+      // Ignore errors
+    }
   }
-}
+
+  // 3. Try Standard API_KEY (Node/System)
+  if (!key) {
+    try {
+      // @ts-ignore
+      if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+        // @ts-ignore
+        key = process.env.API_KEY;
+      }
+    } catch (e) {}
+  }
+
+  // Apply to window.process.env for consistent access throughout the app
+  if (typeof window !== 'undefined') {
+    // @ts-ignore
+    window.process = window.process || {};
+    // @ts-ignore
+    window.process.env = window.process.env || {};
+    
+    if (key) {
+      // @ts-ignore
+      window.process.env.API_KEY = key;
+      console.log(' Mosqu Audio Tuner: API Key successfully detected.');
+    } else {
+      console.warn('Mosque Audio Tuner: No API Key found. Please set VITE_API_KEY in your environment.');
+    }
+  }
+})();
 // -------------------------------------
 
 const rootElement = document.getElementById('root');

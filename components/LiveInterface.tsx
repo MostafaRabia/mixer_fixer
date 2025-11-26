@@ -121,9 +121,13 @@ export const LiveInterface: React.FC<LiveInterfaceProps> = ({ onDisconnect }) =>
   const connectToGemini = async () => {
     try {
       setStatus(ConnectionStatus.CONNECTING);
+      setErrorMessage('');
       
       const apiKey = process.env.API_KEY;
-      if (!apiKey) throw new Error("API Key not found");
+      
+      if (!apiKey) {
+        throw new Error("MISSING_API_KEY");
+      }
 
       const ai = new GoogleGenAI({ apiKey });
 
@@ -275,9 +279,13 @@ export const LiveInterface: React.FC<LiveInterfaceProps> = ({ onDisconnect }) =>
         }
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Setup Error:", error);
-      setErrorMessage("تعذر الوصول إلى الكاميرا أو الميكروفون.");
+      if (error.message === "MISSING_API_KEY") {
+        setErrorMessage("مفتاح API غير موجود. يرجى إضافة VITE_API_KEY في إعدادات Netlify.");
+      } else {
+        setErrorMessage("تعذر الوصول إلى الكاميرا أو الميكروفون.");
+      }
       setStatus(ConnectionStatus.ERROR);
     }
   };
@@ -325,7 +333,8 @@ export const LiveInterface: React.FC<LiveInterfaceProps> = ({ onDisconnect }) =>
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-slate-900 text-white p-6">
         <div className="bg-red-500/10 border border-red-500 rounded-lg p-6 max-w-sm w-full text-center">
-          <p className="text-red-400 mb-4">{errorMessage}</p>
+          <p className="text-red-400 mb-4 font-bold">حدث خطأ</p>
+          <p className="text-red-200 mb-6 text-sm">{errorMessage}</p>
           <button 
             onClick={onDisconnect}
             className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-bold transition-colors"
