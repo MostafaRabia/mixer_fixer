@@ -123,7 +123,19 @@ export const LiveInterface: React.FC<LiveInterfaceProps> = ({ onDisconnect }) =>
       setStatus(ConnectionStatus.CONNECTING);
       setErrorMessage('');
       
-      const apiKey = process.env.API_KEY;
+      // Robust API Key Retrieval:
+      // 1. Try process.env.API_KEY (Node/Standard)
+      // 2. Try window.process.env.API_KEY (Polyfill from index.tsx)
+      // 3. Try import.meta.env.VITE_API_KEY (Vite Direct)
+      let apiKey = process.env.API_KEY;
+      if (!apiKey) {
+        // @ts-ignore
+        apiKey = typeof window !== 'undefined' && window.process?.env?.API_KEY;
+      }
+      if (!apiKey) {
+        // @ts-ignore
+        apiKey = import.meta?.env?.VITE_API_KEY;
+      }
       
       if (!apiKey) {
         throw new Error("MISSING_API_KEY");
